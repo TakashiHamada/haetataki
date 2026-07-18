@@ -34,12 +34,104 @@
     padding: 3px 8px;
     cursor: pointer;
   }
+  #info {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    background: rgba(0,0,0,.4);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 4px;
+    font-size: 12px;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  #modal {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: flex-end;
+    justify-content: flex-start;
+    background: rgba(10,5,20,.45);
+    z-index: 10;
+  }
+  #modal.open { display: flex; }
+  #modal .panel {
+    margin: 10px;
+    margin-bottom: 34px;
+    max-width: 460px;
+    max-height: calc(100% - 60px);
+    overflow-y: auto;
+    background: #2a2233;
+    color: #f0ecf4;
+    border: 2px solid #6b5638;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    line-height: 1.65;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5);
+  }
+  #modal .panel h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #ffd23c;
+  }
+  #modal .panel h3 {
+    margin: 12px 0 2px;
+    font-size: 13.5px;
+  }
+  #modal .panel p { margin: 2px 0 0; }
+  #modal .panel .fun {
+    color: #a8e6a1;
+  }
+  #modal .close {
+    display: block;
+    margin: 12px auto 0;
+    background: #4a3b2a;
+    color: #fff;
+    border: 1px solid #6b5638;
+    border-radius: 6px;
+    padding: 5px 22px;
+    font-size: 13px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="game" width="640" height="480"></canvas>
   <button id="mute">🔊 音あり</button>
+  <button id="info">📝 ハエの動きと面白さ</button>
+  <div id="modal">
+    <div class="panel">
+      <h2>ハエの動きは、どう「楽しさ」に繋がっているか</h2>
+
+      <h3>🪰 小型のハエ — 高速ダッシュ＋急停止</h3>
+      <p>素早く飛び回るが、ときどき空中でホバリングして止まる。</p>
+      <p class="fun">→ 動き回る的を「止まった一瞬」を狙って叩く、狩りのリズムを作る。無害なので安心して追いかけられ、「叩く気持ちよさ」だけを純粋に味わえる基本役。</p>
+
+      <h3>💧 水色のハエ — 素早い＋放置すると火花</h3>
+      <p>小型と同じ速さで飛び回り、時間が経つと止まって斜め4方向に火花を放つ。</p>
+      <p class="fun">→ 「早く仕留めないと反撃される」という時間のプレッシャー。点滅の前兆を見て「今から間に合うか」を判断させ、ただの的当てを駆け引きに変える。</p>
+
+      <h3>🐝 黄色のハエ — 一定の場所で止まる</h3>
+      <p>定位置に止まるので当てやすい。だが放置すると尾から子バエの群れを放ち、群れは叩けず、手を追い回してくる。</p>
+      <p class="fun">→ 「止まっている＝最大のチャンス、同時に危険の予兆」というリスクとリワードの一致。撃ち漏らすと立場が逆転し、攻める側から逃げる側へ。この攻守の切り替えがゲームに緩急を生む。</p>
+
+      <h3>💣 爆弾ハエ — こちらを追い回して自爆</h3>
+      <p>ハエたたきに向かって飛んでくる。一定時間で点滅し、自爆する。</p>
+      <p class="fun">→ 唯一「向こうから来る」敵。近いほど当てやすいが、爆発に巻き込まれるリスクも増す、距離のチキンレース。逃げ続けても時限爆発で解決しないため、いつか踏み込む勇気を要求する。</p>
+
+      <h3>✋ 1UPハンド — まれに点滅して横切る</h3>
+      <p>たまにしか出ず、点滅しながら飛び去ってしまう。</p>
+      <p class="fun">→ 見逃せない一瞬の報酬。乱戦の最中でも画面全体に注意を払わせ、「気づいて取れた」ときの得した感覚を作る。</p>
+
+      <h3>🎾 まとめ：この設計の核</h3>
+      <p class="fun">無害な的（小型）と、放置すると牙をむく脅威（水色・黄色・爆弾）が混在するため、プレイヤーは常に「どれから叩くか」の優先順位を判断し続ける。さらにスイングには約0.27秒の隙があり、連打が効かないので一振り一振りに狙いの重みが乗る。「叩く快感」×「選ぶ緊張感」×「追われる緩急」の3層構造。</p>
+
+      <button class="close">とじる</button>
+    </div>
+  </div>
 </div>
 <script>
 "use strict";
@@ -916,11 +1008,28 @@ document.getElementById("mute").addEventListener("click", e => {
   e.stopPropagation();
 });
 
+// ---- 解説モーダル(開いている間はゲームを一時停止) ----
+const modal = document.getElementById("modal");
+let modalOpen = false;
+function setModal(open) {
+  modalOpen = open;
+  modal.classList.toggle("open", open);
+}
+document.getElementById("info").addEventListener("click", e => {
+  setModal(!modalOpen);
+  e.stopPropagation();
+});
+modal.querySelector(".close").addEventListener("click", () => setModal(false));
+modal.addEventListener("mousedown", e => {
+  if (e.target === modal) setModal(false); // パネル外クリックで閉じる
+  e.stopPropagation();
+});
+
 // =====================================================================
 // メインループ
 // =====================================================================
 function loop() {
-  if (!document.hidden) {
+  if (!document.hidden && !modalOpen) {
     update();
     draw();
   }
