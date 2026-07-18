@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>haetataki</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f5f2;
+    --fg: #1f1f1f;
+    --accent: #d94f30;
+    --muted: #6b6b6b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181c;
+      --fg: #f2f0ec;
+      --accent: #ff6a45;
+      --muted: #9a9a9a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    text-align: center;
+    padding: 2rem;
+  }
+  .logo {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.02em;
+  }
+  p.tagline {
+    color: var(--muted);
+    font-size: 1.1rem;
+    margin: 0 0 2rem;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+  }
+  footer {
+    margin-top: 3rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer a {
+    color: inherit;
+  }
+</style>
+</head>
+<body>
+  <div class="logo">🪰🏓</div>
+  <h1>haetataki</h1>
+  <p class="tagline">シンプルに、素早く。</p>
+  <span class="badge">Coming Soon</span>
+  <footer>
+    <p>&copy; 2026 haetataki &middot; <a href="https://github.com/takashihamada/haetataki" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+</body>
+</html>
