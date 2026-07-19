@@ -166,7 +166,7 @@ let kills = 0, lives = 3, level = 1;
 let flies = [], sparks = [], childs = [], fx = [];
 let bonusHand = null;
 let spawnWait = 0;                // 次スポーンまでの待ちフレーム
-let bonusTimer = rnd(50, 90) * 60; // 1UPハンドの出現タイマー
+let bonusTimer = 0;               // 1UPハンドの出現タイマー(startGameで初期化)
 let levelBanner = 0;
 
 // ---- 入力 ----
@@ -211,7 +211,12 @@ cv.addEventListener("contextmenu", e => e.preventDefault());
 function onClick() {
   ensureAudio();
   if (state === "title") { startGame(); return; }
-  if (state === "gameover") { state = "title"; return; }
+  if (state === "gameover") {
+    // タイトルHUDに前回プレイの値(残機0等)を残さない
+    kills = 0; lives = 3; level = 1;
+    state = "title";
+    return;
+  }
   trySwat();
 }
 
@@ -231,7 +236,7 @@ function startGame() {
   flies = []; sparks = []; childs = []; fx = [];
   bonusHand = null;
   spawnWait = 30;
-  bonusTimer = rnd(45, 80) * 60;
+  bonusTimer = rnd(50, 95) * 60; // ENEMY_SPEC 6章のレンジに統一
   stunT = 0; invulT = 0; swatAnim = 0; swatCd = 0;
   levelBanner = 0;
 }
