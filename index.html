@@ -147,8 +147,11 @@
 //  - 水色のハエ : 小型のハエと同じく素早い。時間が経つと斜め4方向に火花
 //  - ハエ本体に触れてもミスにならない。ハエたちの「攻撃」に当たるとミス
 //  - 残機3。点滅した1UPハンドがまれに飛んでくる(クリックで残機+1)
-//  - 100匹ごとにレベルアップ(原作の1面=100匹)。周回ごとに速く・多くなる
+//  - KILLS_PER_LEVEL匹ごとにレベルアップ。レベルが上がると速く・多くなる
 // =====================================================================
+
+// 研究用: 原作は100匹=1面だが、色々な敵を早く見られるよう20匹ごとにレベルアップ
+const KILLS_PER_LEVEL = 20;
 
 const cv = document.getElementById("game");
 const cx = cv.getContext("2d");
@@ -317,7 +320,7 @@ function trySwat() {
       kills++;
       hit = true;
       fx.push({ kind: "splat", x: f.x, y: f.y, t: 0, type: f.type, vx: rnd(-1, 1) });
-      if (kills % 100 === 0) {
+      if (kills % KILLS_PER_LEVEL === 0) {
         level++;
         levelBanner = 100;
         sfx("level");
@@ -918,7 +921,7 @@ function drawTitle() {
   cx.fillText("爆弾ハエ: ハエたたきを追い回して自爆する", W / 2, 318);
   cx.fillText("水色のハエ: すばやく、斜め4方向に火花を飛ばす", W / 2, 340);
   cx.fillText("攻撃(火花・子バエ・爆発)が握り拳に当たるとミス ／ 残機3", W / 2, 366);
-  cx.fillText("点滅する1UPハンドを叩くと残機+1 ／ 100匹ごとにレベルアップ", W / 2, 388);
+  cx.fillText("点滅する1UPハンドを叩くと残機+1 ／ 20匹ごとにレベルアップ", W / 2, 388);
   if (frame % 60 < 40) {
     cx.font = "bold 22px sans-serif";
     cx.fillStyle = "#7CFC00";
