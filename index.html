@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ハエたたき - haetataki</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #2b2530;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+  #wrap { position: relative; }
+  canvas {
+    display: block;
+    max-width: 100vw;
+    max-height: 100vh;
+    cursor: none;
+    image-rendering: pixelated;
+  }
+  #mute {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    background: rgba(0,0,0,.4);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 4px;
+    font-size: 12px;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  #info {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    background: rgba(0,0,0,.4);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 4px;
+    font-size: 12px;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  #modal {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: flex-end;
+    justify-content: flex-start;
+    background: rgba(10,5,20,.45);
+    z-index: 10;
+  }
+  #modal.open { display: flex; }
+  #modal .panel {
+    margin: 10px;
+    margin-bottom: 34px;
+    max-width: 460px;
+    max-height: calc(100% - 60px);
+    overflow-y: auto;
+    background: #2a2233;
+    color: #f0ecf4;
+    border: 2px solid #6b5638;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    line-height: 1.65;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5);
+  }
+  #modal .panel h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #ffd23c;
+  }
+  #modal .panel h3 {
+    margin: 12px 0 2px;
+    font-size: 13.5px;
+  }
+  #modal .panel p { margin: 2px 0 0; }
+  #modal .panel .fun {
+    color: #a8e6a1;
+  }
+  #modal .close {
+    display: block;
+    margin: 12px auto 0;
+    background: #4a3b2a;
+    color: #fff;
+    border: 1px solid #6b5638;
+    border-radius: 6px;
+    padding: 5px 22px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="640" height="480"></canvas>
+  <button id="mute">🔊 音あり</button>
+  <button id="info">📝 ハエの動きと面白さ</button>
+  <div id="modal">
+    <div class="panel">
+      <h2>ハエの動きは、どう「楽しさ」に繋がっているか</h2>
+
+      <h3>🪰 小型のハエ — 高速ダッシュ＋急停止</h3>
+      <p>素早く飛び回るが、ときどき空中でホバリングして止まる。</p>
+      <p class="fun">→ 動き回る的を「止まった一瞬」を狙って叩く、狩りのリズムを作る。無害なので安心して追いかけられ、「叩く気持ちよさ」だけを純粋に味わえる基本役。</p>
+
+      <h3>💧 水色のハエ — 素早い＋放置すると火花</h3>
+      <p>小型と同じ速さで飛び回り、時間が経つと止まって斜め4方向に火花を放つ。</p>
+      <p class="fun">→ 「早く仕留めないと反撃される」という時間のプレッシャー。点滅の前兆を見て「今から間に合うか」を判断させ、ただの的当てを駆け引きに変える。</p>
+
+      <h3>🐝 黄色のハエ — 一定の場所で止まる</h3>
+      <p>定位置に止まるので当てやすい。だが放置すると尾から子バエの群れを放ち、群れは叩けず、手を追い回してくる。</p>
+      <p class="fun">→ 「止まっている＝最大のチャンス、同時に危険の予兆」というリスクとリワードの一致。撃ち漏らすと立場が逆転し、攻める側から逃げる側へ。この攻守の切り替えがゲームに緩急を生む。</p>
+
+      <h3>💣 爆弾ハエ — こちらを追い回して自爆</h3>
+      <p>ハエたたきに向かって飛んでくる。一定時間で点滅し、自爆する。</p>
+      <p class="fun">→ 唯一「向こうから来る」敵。近いほど当てやすいが、爆発に巻き込まれるリスクも増す、距離のチキンレース。逃げ続けても時限爆発で解決しないため、いつか踏み込む勇気を要求する。</p>
+
+      <h3>✋ 1UPハンド — まれに点滅して横切る</h3>
+      <p>たまにしか出ず、点滅しながら飛び去ってしまう。</p>
+      <p class="fun">→ 見逃せない一瞬の報酬。乱戦の最中でも画面全体に注意を払わせ、「気づいて取れた」ときの得した感覚を作る。</p>
+
+      <h3>🎾 まとめ：この設計の核</h3>
+      <p class="fun">無害な的（小型）と、放置すると牙をむく脅威（水色・黄色・爆弾）が混在するため、プレイヤーは常に「どれから叩くか」の優先順位を判断し続ける。さらにスイングには約0.27秒の隙があり、連打が効かないので一振り一振りに狙いの重みが乗る。「叩く快感」×「選ぶ緊張感」×「追われる緩急」の3層構造。</p>
+
+      <button class="close">とじる</button>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+// =====================================================================
+// ハエたたき — マリオペイント(SFC, 1992)版「ハエたたき」のボス無し無限クローン
+//
+// 原作仕様(Wikipedia他)の再現ポイント:
+//  - 小型のハエ : すばやい。当たり判定が小さい。攻撃してこない(無害)
+//  - 黄色のハエ : 一定の場所で止まり、尾から子バエの群れを出す。
+//                 群れは手を追い回し、叩いて倒せない。触れるとミス
+//  - 爆弾ハエ   : ボム兵に羽が生えた外観。ハエたたきを追い回し、
+//                 一定時間で自爆する。爆発に巻き込まれるとミス
+//  - 水色のハエ : 小型のハエと同じく素早い。時間が経つと斜め4方向に火花
+//  - ハエ本体に触れてもミスにならない。ハエたちの「攻撃」に当たるとミス
+//  - 残機3。点滅した1UPハンドがまれに飛んでくる(クリックで残機+1)
+//  - KILLS_PER_LEVEL匹ごとにレベルアップ。レベルが上がると速く・多くなる
+// =====================================================================
+
+// 研究用: 原作は100匹=1面だが、色々な敵を早く見られるよう20匹ごとにレベルアップ
+const KILLS_PER_LEVEL = 20;
+
+const cv = document.getElementById("game");
+const cx = cv.getContext("2d");
+const W = 640, H = 480;
+const HUD_H = 44;                 // 上部カウンター帯
+const TAU = Math.PI * 2;
+
+// ---- 状態 ----
+let state = "title";              // title | playing | gameover
+let frame = 0;
+let kills = 0, lives = 3, level = 1;
+let flies = [], sparks = [], childs = [], fx = [];
+let bonusHand = null;
+let spawnWait = 0;                // 次スポーンまでの待ちフレーム
+let bonusTimer = 0;               // 1UPハンドの出現タイマー(startGameで初期化)
+let levelBanner = 0;
+
+// ---- 入力 ----
+const mouse = { x: W / 2, y: H / 2 };
+let swatAnim = 0;                 // スイング残りフレーム
+let swatCd = 0;                   // 連打クールダウン
+let stunT = 0;                    // 刺され硬直
+let invulT = 0;                   // 無敵時間
+
+function canvasPos(e) {
+  const r = cv.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (W / r.width),
+    y: (e.clientY - r.top) * (H / r.height),
+  };
+}
+cv.addEventListener("mousemove", e => {
+  const p = canvasPos(e);
+  mouse.x = p.x; mouse.y = p.y;
+});
+cv.addEventListener("mousedown", e => {
+  e.preventDefault();
+  const p = canvasPos(e);
+  mouse.x = p.x; mouse.y = p.y;
+  onClick();
+});
+cv.addEventListener("touchstart", e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  const p = canvasPos(t);
+  mouse.x = p.x; mouse.y = p.y;
+  onClick();
+}, { passive: false });
+cv.addEventListener("touchmove", e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  const p = canvasPos(t);
+  mouse.x = p.x; mouse.y = p.y;
+}, { passive: false });
+cv.addEventListener("contextmenu", e => e.preventDefault());
+
+function onClick() {
+  ensureAudio();
+  if (state === "title") { startGame(); return; }
+  if (state === "gameover") {
+    // タイトルHUDに前回プレイの値(残機0等)を残さない
+    kills = 0; lives = 3; level = 1;
+    state = "title";
+    return;
+  }
+  trySwat();
+}
+
+// ---- ユーティリティ ----
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function irnd(a, b) { return Math.floor(rnd(a, b + 1)); }
+function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+
+// 難易度スケール(原作: 周回ごとに速く・多くなる)
+function speedMult() { return Math.min(1 + (level - 1) * 0.08, 1.6); }
+function maxOnScreen() { return Math.min(2 + level, 7); }
+
+// ---- ゲーム開始 ----
+function startGame() {
+  state = "playing";
+  kills = 0; lives = 3; level = 1;
+  flies = []; sparks = []; childs = []; fx = [];
+  bonusHand = null;
+  spawnWait = 30;
+  bonusTimer = rnd(50, 95) * 60; // ENEMY_SPEC 6章のレンジに統一
+  stunT = 0; invulT = 0; swatAnim = 0; swatCd = 0;
+  levelBanner = 0;
+}
+
+// ---- スポーン ----
+// レベルに応じた構成比: L1=小+水色, L2で黄色, L3で爆弾ハエが加わる
+function pickType() {
+  const r = Math.random();
+  if (level === 1) return r < 0.25 ? "blue" : "fly";
+  if (level === 2) return r < 0.20 ? "blue" : r < 0.40 ? "yellow" : "fly";
+  return r < 0.20 ? "blue" : r < 0.35 ? "yellow" : r < 0.50 ? "bomb" : "fly";
+}
+
+function spawnFly() {
+  const type = pickType();
+  const edge = irnd(0, 3); // 0上 1右 2下 3左
+  let x, y;
+  if (edge === 0) { x = rnd(40, W - 40); y = HUD_H - 20; }
+  else if (edge === 2) { x = rnd(40, W - 40); y = H + 20; }
+  else if (edge === 1) { x = W + 20; y = rnd(HUD_H + 40, H - 40); }
+  else { x = -20; y = rnd(HUD_H + 40, H - 40); }
+
+  const f = {
+    type, x, y,
+    vx: 0, vy: 0,
+    mode: "dash", modeT: 0,
+    atkT: 0, tele: 0,
+    wing: Math.random() * TAU,
+  };
+  const sm = speedMult();
+
+  if (type === "fly" || type === "blue") {
+    // 画面内に向かって最初のダッシュ(水色も小型と同じく素早い)
+    const ang = Math.atan2((H / 2 + rnd(-120, 120)) - y, (W / 2 + rnd(-200, 200)) - x);
+    const sp = rnd(3.0, 4.2) * sm;
+    f.vx = Math.cos(ang) * sp; f.vy = Math.sin(ang) * sp;
+    f.modeT = irnd(18, 40);
+    if (type === "blue") f.atkT = irnd(280, 460); // 時間が経つと火花
+  } else if (type === "yellow") {
+    // 目標地点まで飛び、そこで止まって子バエを出す
+    f.mode = "move";
+    f.tx = rnd(70, W - 70); f.ty = rnd(HUD_H + 70, H - 90);
+    f.atkT = 0;
+  } else if (type === "bomb") {
+    // ハエたたき(カーソル)を追い回し、一定時間で自爆
+    f.fuse = irnd(330, 450);
+    f.ang = Math.atan2(mouse.y - y, mouse.x - x);
+  }
+  flies.push(f);
+}
+
+function spawnChildren(px, py) {
+  // 子バエの群れ: 尾から一列に湧いて手を追尾(原作: 叩けない・逃げるしかない)
+  const n = irnd(4, 6);
+  for (let i = 0; i < n; i++) {
+    childs.push({
+      x: px, y: py,
+      ang: Math.atan2(handY() - py, handX() - px),
+      delay: i * 9,
+      life: 330 + i * 9,
+      wing: Math.random() * TAU,
+    });
+  }
+  sfx("shoot");
+}
+
+// ---- 手(急所)の位置: カーソル=たたき網の中心、その下の握り拳が急所 ----
+function handX() { return mouse.x; }
+function handY() { return mouse.y + 58; }
+
+// ---- スイング ----
+function trySwat() {
+  if (state !== "playing") return;
+  if (stunT > 0 || swatCd > 0) return;
+  swatAnim = 8;
+  swatCd = 16; // 約0.27秒: 原作のスイングモーション相当
+  let hit = false;
+
+  // たたき網の判定(カーソル中心)
+  const R = 26;
+  for (let i = flies.length - 1; i >= 0; i--) {
+    const f = flies[i];
+    const fr = f.type === "fly" ? 10 : 15;
+    if (dist(f.x, f.y, mouse.x, mouse.y) < R + fr - 8) {
+      flies.splice(i, 1);
+      kills++;
+      hit = true;
+      fx.push({ kind: "splat", x: f.x, y: f.y, t: 0, type: f.type, vx: rnd(-1, 1) });
+      if (kills % KILLS_PER_LEVEL === 0) {
+        level++;
+        levelBanner = 100;
+        sfx("level");
+      }
+    }
+  }
+  // 1UPハンド
+  if (bonusHand && dist(bonusHand.x, bonusHand.y, mouse.x, mouse.y) < R + 16) {
+    bonusHand = null;
+    if (lives < 6) lives++;
+    fx.push({ kind: "oneup", x: mouse.x, y: mouse.y - 20, t: 0 });
+    sfx("oneup");
+    hit = true;
+  }
+  sfx(hit ? "hit" : "miss");
+}
+
+// ---- 被弾(ハエ本体は無害。攻撃=火花・子バエ・爆発のみがミス) ----
+function hurt() {
+  if (invulT > 0 || state !== "playing") return;
+  lives--;
+  stunT = 55;
+  invulT = 130;
+  sfx("sting");
+  fx.push({ kind: "sting", x: handX(), y: handY(), t: 0 });
+  if (lives <= 0) {
+    state = "gameover";
+    sfx("over");
+  }
+}
+
+// ---- 更新 ----
+function update() {
+  frame++;
+  if (state !== "playing") return;
+
+  if (swatAnim > 0) swatAnim--;
+  if (swatCd > 0) swatCd--;
+  if (stunT > 0) stunT--;
+  if (invulT > 0) invulT--;
+  if (levelBanner > 0) levelBanner--;
+
+  const sm = speedMult();
+
+  // スポーン管理: 常に一定数を画面に維持(原作: 倒すと次が湧く)
+  if (flies.length < maxOnScreen()) {
+    if (spawnWait > 0) spawnWait--;
+    else { spawnFly(); spawnWait = irnd(18, 55); }
+  }
+
+  // 1UPハンド: まれに点滅しながら横切って飛んでくる
+  bonusTimer--;
+  if (bonusTimer <= 0 && !bonusHand) {
+    const fromLeft = Math.random() < 0.5;
+    bonusHand = {
+      x: fromLeft ? -24 : W + 24,
+      y: rnd(HUD_H + 60, H - 100),
+      vx: (fromLeft ? 1 : -1) * 1.2,
+      sway: Math.random() * TAU,
+    };
+    bonusTimer = rnd(50, 95) * 60;
+  }
+  if (bonusHand) {
+    bonusHand.x += bonusHand.vx;
+    bonusHand.sway += 0.06;
+    bonusHand.y += Math.sin(bonusHand.sway) * 1.1;
+    if (bonusHand.x < -30 || bonusHand.x > W + 30) bonusHand = null;
+  }
+
+  // ハエ更新
+  for (let i = flies.length - 1; i >= 0; i--) {
+    const f = flies[i];
+    f.wing += 1.1;
+
+    if (f.type === "fly" || f.type === "blue") {
+      // ダッシュとホバリングの繰り返し(「画面を素早く飛び回る」動き)
+      if (f.type === "blue" && f.tele > 0) {
+        // 火花の前兆: 停止して点滅
+        f.tele--;
+        f.x += rnd(-1, 1);
+        if (f.tele === 0) {
+          for (let k = 0; k < 4; k++) {
+            const a = Math.PI / 4 + k * Math.PI / 2; // 斜め4方向
+            sparks.push({ x: f.x, y: f.y, vx: Math.cos(a) * 2.4 * sm, vy: Math.sin(a) * 2.4 * sm, t: 0 });
+          }
+          sfx("shoot");
+          f.atkT = irnd(300, 480);
+        }
+        continue;
+      }
+      f.modeT--;
+      if (f.mode === "dash") {
+        f.x += f.vx; f.y += f.vy;
+        if (f.modeT <= 0) {
+          if (Math.random() < 0.35) { f.mode = "hover"; f.modeT = irnd(12, 34); }
+          else newDash(f, sm);
+        }
+      } else {
+        f.x += rnd(-0.7, 0.7); f.y += rnd(-0.7, 0.7);
+        if (f.modeT <= 0) newDash(f, sm);
+      }
+      if (f.type === "blue") {
+        // 水色は画面に留まる(端で反転)。時間経過で火花
+        if (f.x < 26) { f.x = 26; f.vx = Math.abs(f.vx); }
+        if (f.x > W - 26) { f.x = W - 26; f.vx = -Math.abs(f.vx); }
+        if (f.y < HUD_H + 26) { f.y = HUD_H + 26; f.vy = Math.abs(f.vy); }
+        if (f.y > H - 26) { f.y = H - 26; f.vy = -Math.abs(f.vy); }
+        f.atkT--;
+        if (f.atkT <= 0) f.tele = 30;
+      } else {
+        // 小型は画面外に飛び去ることもある(スポーンで補充)
+        if (f.x < -40 || f.x > W + 40 || f.y < HUD_H - 44 || f.y > H + 40) flies.splice(i, 1);
+      }
+
+    } else if (f.type === "yellow") {
+      // 目標地点へ移動 → 一定の場所で止まる → 尾から子バエの群れ
+      if (f.mode === "move") {
+        const d = dist(f.x, f.y, f.tx, f.ty);
+        if (d < 4) { f.mode = "wait"; f.modeT = irnd(50, 100); }
+        else {
+          const a = Math.atan2(f.ty - f.y, f.tx - f.x);
+          f.x += Math.cos(a) * 2.0 * sm;
+          f.y += Math.sin(a) * 2.0 * sm;
+        }
+      } else if (f.mode === "wait") {
+        f.x += rnd(-0.5, 0.5); f.y += rnd(-0.5, 0.5); // その場でホバリング
+        f.modeT--;
+        if (f.modeT <= 0) { f.mode = "tele"; f.tele = 40; }
+      } else if (f.mode === "tele") {
+        f.tele--;
+        if (f.tele <= 0) {
+          spawnChildren(f.x, f.y);
+          // 群れを出したら別の場所へ移動
+          f.mode = "move";
+          f.tx = rnd(70, W - 70); f.ty = rnd(HUD_H + 70, H - 90);
+        }
+      }
+
+    } else if (f.type === "bomb") {
+      // ハエたたき(カーソル)を追い回す
+      const want = Math.atan2(mouse.y - f.y, mouse.x - f.x);
+      let d = want - f.ang;
+      while (d > Math.PI) d -= TAU;
+      while (d < -Math.PI) d += TAU;
+      f.ang += Math.max(-0.045, Math.min(0.045, d));
+      f.x += Math.cos(f.ang) * 1.7 * sm;
+      f.y += Math.sin(f.ang) * 1.7 * sm;
+      f.fuse--;
+      if (f.fuse <= 0) {
+        // 自爆
+        flies.splice(i, 1);
+        fx.push({ kind: "boom", x: f.x, y: f.y, t: 0 });
+        sfx("boom");
+        if (dist(f.x, f.y, handX(), handY()) < 62) hurt();
+        continue;
+      }
+    }
+  }
+
+  // 火花
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const o = sparks[i];
+    o.x += o.vx; o.y += o.vy; o.t++;
+    if (o.x < -20 || o.x > W + 20 || o.y < HUD_H - 20 || o.y > H + 20) { sparks.splice(i, 1); continue; }
+    if (dist(o.x, o.y, handX(), handY()) < 6 + 15) { sparks.splice(i, 1); hurt(); }
+  }
+
+  // 子バエの群れ(追尾・叩けない)
+  for (let i = childs.length - 1; i >= 0; i--) {
+    const c = childs[i];
+    if (c.delay > 0) { c.delay--; continue; }
+    c.life--;
+    c.wing += 1.4;
+    const want = Math.atan2(handY() - c.y, handX() - c.x);
+    let d = want - c.ang;
+    while (d > Math.PI) d -= TAU;
+    while (d < -Math.PI) d += TAU;
+    c.ang += Math.max(-0.055, Math.min(0.055, d));
+    c.x += Math.cos(c.ang) * 2.1 * speedMult();
+    c.y += Math.sin(c.ang) * 2.1 * speedMult();
+    if (dist(c.x, c.y, handX(), handY()) < 5 + 15) {
+      childs.splice(i, 1);
+      hurt();
+      continue;
+    }
+    if (c.life <= 0) {
+      fx.push({ kind: "poof", x: c.x, y: c.y, t: 0 });
+      childs.splice(i, 1);
+    }
+  }
+
+  // エフェクト
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const e = fx[i];
+    e.t++;
+    if (e.kind === "splat") { e.y += e.t * 0.25; e.x += e.vx; }
+    if (e.kind === "oneup") e.y -= 0.7;
+    const lifeMax = e.kind === "splat" ? 46 : e.kind === "oneup" ? 60 : e.kind === "boom" ? 34 : 24;
+    if (e.t > lifeMax) fx.splice(i, 1);
+  }
+}
+
+function newDash(f, sm) {
+  f.mode = "dash";
+  f.modeT = irnd(16, 38);
+  const ang = rnd(0, TAU);
+  const sp = rnd(3.0, 4.4) * sm;
+  f.vx = Math.cos(ang) * sp;
+  f.vy = Math.sin(ang) * sp;
+  // 場外に一直線で消えすぎないよう中央寄りに補正
+  if ((f.x < 70 && f.vx < 0) || (f.x > W - 70 && f.vx > 0)) f.vx *= -1;
+  if ((f.y < HUD_H + 60 && f.vy < 0) || (f.y > H - 60 && f.vy > 0)) {
+    if (Math.random() < 0.6) f.vy *= -1;
+  }
+}
+
+// =====================================================================
+// 描画
+// =====================================================================
+function draw() {
+  // 背景: 原作風の市松タイル
+  cx.fillStyle = "#8d8299";
+  cx.fillRect(0, 0, W, H);
+  cx.fillStyle = "#7d7089";
+  for (let y = 0; y < H; y += 32)
+    for (let x = ((y / 32) % 2) * 32; x < W; x += 64)
+      cx.fillRect(x, y, 32, 32);
+
+  cx.strokeStyle = "rgba(0,0,0,.25)";
+  cx.lineWidth = 4;
+  cx.strokeRect(2, HUD_H + 2, W - 4, H - HUD_H - 4);
+
+  if (state === "playing" || state === "gameover") {
+    drawEntities();
+  }
+
+  drawHUD();
+
+  if (state === "title") drawTitle();
+  if (state === "gameover") drawGameOver();
+  if (levelBanner > 0 && state === "playing") {
+    cx.font = "bold 40px monospace";
+    cx.textAlign = "center";
+    cx.fillStyle = `rgba(255,240,120,${Math.min(1, levelBanner / 30)})`;
+    cx.strokeStyle = `rgba(60,30,0,${Math.min(1, levelBanner / 30)})`;
+    cx.lineWidth = 5;
+    cx.strokeText("LEVEL " + level, W / 2, H / 2 - 60);
+    cx.fillText("LEVEL " + level, W / 2, H / 2 - 60);
+  }
+
+  // カーソル(手+ハエたたき)
+  if (state === "playing") drawSwatter(mouse.x, mouse.y);
+  else drawCursorSimple(mouse.x, mouse.y);
+}
+
+function drawEntities() {
+  // 1UPハンド(点滅しながら飛んでくる)
+  if (bonusHand && (frame % 10 < 7)) {
+    cx.save();
+    cx.translate(bonusHand.x, bonusHand.y);
+    cx.shadowColor = "rgba(255,255,140,.9)";
+    cx.shadowBlur = 14;
+    drawGlove(0, 0, "#fff6c8");
+    cx.font = "bold 11px monospace";
+    cx.textAlign = "center";
+    cx.fillStyle = "#063";
+    cx.fillText("1UP", 0, 4);
+    cx.restore();
+  }
+
+  // ハエ
+  for (const f of flies) {
+    if (f.type === "fly") drawFly(f, 9, "#2a2a2a", "#444");
+    else if (f.type === "blue") drawFly(f, 13, f.tele > 0 && (frame & 4) ? "#fff" : "#6cc4de", "#4a99b5");
+    else if (f.type === "yellow") drawYellow(f);
+    else if (f.type === "bomb") drawBomb(f);
+  }
+
+  // 火花
+  for (const o of sparks) {
+    cx.save();
+    cx.translate(o.x, o.y);
+    cx.rotate(o.t * 0.3);
+    cx.fillStyle = (o.t & 4) ? "#fff" : "#ffd23c";
+    for (let k = 0; k < 4; k++) {
+      cx.rotate(Math.PI / 2);
+      cx.beginPath();
+      cx.moveTo(0, -7); cx.lineTo(2.4, -2.4); cx.lineTo(-2.4, -2.4);
+      cx.fill();
+    }
+    cx.beginPath(); cx.arc(0, 0, 3, 0, TAU); cx.fill();
+    cx.restore();
+  }
+
+  // 子バエの群れ
+  for (const c of childs) {
+    if (c.delay > 0) continue;
+    const blink = c.life < 60 && (frame & 4);
+    if (blink) continue;
+    cx.save();
+    cx.translate(c.x, c.y);
+    cx.fillStyle = "#c9a227";
+    cx.beginPath(); cx.arc(0, 0, 4, 0, TAU); cx.fill();
+    cx.fillStyle = "rgba(255,255,255,.75)";
+    const w = Math.sin(c.wing) * 3;
+    cx.beginPath(); cx.ellipse(-3, -3 + w, 3.4, 1.7, -0.5, 0, TAU); cx.fill();
+    cx.beginPath(); cx.ellipse(3, -3 - w, 3.4, 1.7, 0.5, 0, TAU); cx.fill();
+    cx.restore();
+  }
+
+  // エフェクト
+  for (const e of fx) {
+    if (e.kind === "splat") {
+      cx.save();
+      cx.translate(e.x, e.y);
+      cx.rotate(e.t * 0.2);
+      cx.globalAlpha = Math.max(0, 1 - e.t / 46);
+      const r = e.type === "fly" ? 8 : 12;
+      cx.fillStyle = "#333";
+      cx.beginPath(); cx.ellipse(0, 0, r, r * 0.4, 0, 0, TAU); cx.fill();
+      cx.restore();
+      cx.globalAlpha = 1;
+    } else if (e.kind === "boom") {
+      const r = 12 + e.t * 2.2;
+      cx.globalAlpha = Math.max(0, 1 - e.t / 34);
+      cx.strokeStyle = "#ff9a3c";
+      cx.lineWidth = 6;
+      cx.beginPath(); cx.arc(e.x, e.y, r, 0, TAU); cx.stroke();
+      cx.fillStyle = "rgba(255,220,80,.6)";
+      cx.beginPath(); cx.arc(e.x, e.y, r * 0.6, 0, TAU); cx.fill();
+      cx.globalAlpha = 1;
+    } else if (e.kind === "poof") {
+      cx.globalAlpha = Math.max(0, 1 - e.t / 24);
+      cx.fillStyle = "#fff";
+      for (let k = 0; k < 4; k++) {
+        const a = k * TAU / 4 + 0.6;
+        cx.beginPath();
+        cx.arc(e.x + Math.cos(a) * e.t, e.y + Math.sin(a) * e.t, 2.5, 0, TAU);
+        cx.fill();
+      }
+      cx.globalAlpha = 1;
+    } else if (e.kind === "oneup") {
+      cx.globalAlpha = Math.max(0, 1 - e.t / 60);
+      cx.font = "bold 18px monospace";
+      cx.textAlign = "center";
+      cx.fillStyle = "#aaffaa";
+      cx.strokeStyle = "#063";
+      cx.lineWidth = 3;
+      cx.strokeText("1UP!", e.x, e.y);
+      cx.fillText("1UP!", e.x, e.y);
+      cx.globalAlpha = 1;
+    } else if (e.kind === "sting") {
+      cx.globalAlpha = Math.max(0, 1 - e.t / 24);
+      cx.strokeStyle = "#ff4444";
+      cx.lineWidth = 3;
+      for (let k = 0; k < 6; k++) {
+        const a = k * TAU / 6;
+        cx.beginPath();
+        cx.moveTo(e.x + Math.cos(a) * (6 + e.t), e.y + Math.sin(a) * (6 + e.t));
+        cx.lineTo(e.x + Math.cos(a) * (14 + e.t), e.y + Math.sin(a) * (14 + e.t));
+        cx.stroke();
+      }
+      cx.globalAlpha = 1;
+    }
+  }
+}
+
+function drawFly(f, r, body, thorax) {
+  cx.save();
+  cx.translate(f.x, f.y);
+  // 羽
+  const w = Math.sin(f.wing) * 4;
+  cx.fillStyle = "rgba(255,255,255,.7)";
+  cx.beginPath(); cx.ellipse(-r * 0.6, -r * 0.55 + w, r * 0.85, r * 0.38, -0.5, 0, TAU); cx.fill();
+  cx.beginPath(); cx.ellipse(r * 0.6, -r * 0.55 - w, r * 0.85, r * 0.38, 0.5, 0, TAU); cx.fill();
+  // 体
+  cx.fillStyle = body;
+  cx.beginPath(); cx.ellipse(0, 0, r * 0.75, r, 0, 0, TAU); cx.fill();
+  cx.fillStyle = thorax;
+  cx.beginPath(); cx.arc(0, -r * 0.55, r * 0.5, 0, TAU); cx.fill();
+  // 目
+  cx.fillStyle = "#fff";
+  cx.beginPath(); cx.arc(-r * 0.28, -r * 0.7, r * 0.2, 0, TAU); cx.fill();
+  cx.beginPath(); cx.arc(r * 0.28, -r * 0.7, r * 0.2, 0, TAU); cx.fill();
+  cx.fillStyle = "#000";
+  cx.beginPath(); cx.arc(-r * 0.28, -r * 0.7, r * 0.09, 0, TAU); cx.fill();
+  cx.beginPath(); cx.arc(r * 0.28, -r * 0.7, r * 0.09, 0, TAU); cx.fill();
+  cx.restore();
+}
+
+function drawYellow(f) {
+  const r = 13;
+  cx.save();
+  cx.translate(f.x, f.y);
+  const flash = f.mode === "tele" && (frame & 4);
+  // 羽
+  const w = Math.sin(f.wing) * 4;
+  cx.fillStyle = "rgba(255,255,255,.75)";
+  cx.beginPath(); cx.ellipse(-8, -8 + w, 11, 5, -0.5, 0, TAU); cx.fill();
+  cx.beginPath(); cx.ellipse(8, -8 - w, 11, 5, 0.5, 0, TAU); cx.fill();
+  // 縞のある黄色い体
+  cx.fillStyle = flash ? "#ff8844" : "#e8b71a";
+  cx.beginPath(); cx.ellipse(0, 0, r * 0.8, r, 0, 0, TAU); cx.fill();
+  cx.fillStyle = "#3a2d05";
+  cx.fillRect(-r * 0.7, -3, r * 1.4, 3);
+  cx.fillRect(-r * 0.62, 4, r * 1.24, 3);
+  // 尾(子バエの発射口)
+  cx.fillStyle = flash ? "#fff" : "#3a2d05";
+  cx.beginPath(); cx.moveTo(-4, r); cx.lineTo(4, r); cx.lineTo(0, r + 6); cx.fill();
+  // 目
+  cx.fillStyle = "#fff";
+  cx.beginPath(); cx.arc(-4, -9, 3, 0, TAU); cx.fill();
+  cx.beginPath(); cx.arc(4, -9, 3, 0, TAU); cx.fill();
+  cx.fillStyle = "#000";
+  cx.beginPath(); cx.arc(-4, -9, 1.4, 0, TAU); cx.fill();
+  cx.beginPath(); cx.arc(4, -9, 1.4, 0, TAU); cx.fill();
+  cx.restore();
+}
+
+function drawBomb(f) {
+  // ボム兵に羽が生えたような外観。自爆間近は点滅
+  const r = 12;
+  const danger = f.fuse < 90;
+  const flash = danger && (frame & (f.fuse < 40 ? 2 : 4));
+  cx.save();
+  cx.translate(f.x, f.y);
+  // 羽
+  const w = Math.sin(f.wing) * 4;
+  cx.fillStyle = "rgba(255,255,255,.75)";
+  cx.beginPath(); cx.ellipse(-8, -9 + w, 10, 4.5, -0.5, 0, TAU); cx.fill();
+  cx.beginPath(); cx.ellipse(8, -9 - w, 10, 4.5, 0.5, 0, TAU); cx.fill();
+  // 導火線
+  cx.strokeStyle = "#caa64a";
+  cx.lineWidth = 2.5;
+  cx.beginPath(); cx.moveTo(0, -r); cx.quadraticCurveTo(4, -r - 6, 1, -r - 9); cx.stroke();
+  // 導火線の火
+  cx.fillStyle = (frame & 4) ? "#ffd23c" : "#ff7a30";
+  cx.beginPath(); cx.arc(1, -r - 10, 3, 0, TAU); cx.fill();
+  // 丸い黒い体
+  cx.fillStyle = flash ? "#ff5544" : "#23232b";
+  cx.beginPath(); cx.arc(0, 0, r, 0, TAU); cx.fill();
+  cx.fillStyle = "rgba(255,255,255,.25)";
+  cx.beginPath(); cx.arc(-4, -4, 3.5, 0, TAU); cx.fill();
+  // 目
+  cx.fillStyle = "#fff";
+  cx.beginPath(); cx.arc(-4, -1, 2.6, 0, TAU); cx.fill();
+  cx.beginPath(); cx.arc(4, -1, 2.6, 0, TAU); cx.fill();
+  cx.fillStyle = "#000";
+  cx.beginPath(); cx.arc(-4, -1, 1.2, 0, TAU); cx.fill();
+  cx.beginPath(); cx.arc(4, -1, 1.2, 0, TAU); cx.fill();
+  // 足
+  cx.fillStyle = "#e8b71a";
+  cx.beginPath(); cx.ellipse(-5, r, 4, 2.5, 0, 0, TAU); cx.fill();
+  cx.beginPath(); cx.ellipse(5, r, 4, 2.5, 0, 0, TAU); cx.fill();
+  cx.restore();
+}
+
+function drawGlove(x, y, color) {
+  cx.save();
+  cx.translate(x, y);
+  cx.fillStyle = color;
+  cx.strokeStyle = "#555";
+  cx.lineWidth = 2;
+  cx.beginPath();
+  cx.arc(0, 0, 13, 0.2, Math.PI - 0.2);
+  cx.arc(0, -4, 12, Math.PI - 0.2, 0.2);
+  cx.closePath();
+  cx.fill(); cx.stroke();
+  cx.beginPath();
+  cx.moveTo(-4, -13); cx.lineTo(-4, -5);
+  cx.moveTo(2, -14); cx.lineTo(2, -5);
+  cx.stroke();
+  cx.restore();
+}
+
+function drawSwatter(x, y) {
+  const stung = stunT > 0;
+  const blink = invulT > 0 && (frame & 4);
+  const press = swatAnim > 0 ? 6 : 0; // スイング中は網が沈む
+  cx.save();
+  cx.translate(x, y + press * 0.3);
+  if (stung) cx.translate(rnd(-2, 2), rnd(-2, 2));
+
+  // 柄
+  cx.strokeStyle = "#caa64a";
+  cx.lineWidth = 6;
+  cx.beginPath();
+  cx.moveTo(0, 24 - press);
+  cx.lineTo(0, 46);
+  cx.stroke();
+
+  // 網(カーソルの当たり判定の中心)
+  cx.save();
+  cx.translate(0, -press);
+  cx.fillStyle = swatAnim > 0 ? "#ff5a3c" : "#e04a30";
+  cx.strokeStyle = "#8c2413";
+  cx.lineWidth = 3;
+  roundRect(-23, -26, 46, 50, 10);
+  cx.fill(); cx.stroke();
+  cx.strokeStyle = "rgba(255,255,255,.55)";
+  cx.lineWidth = 1;
+  for (let gx = -16; gx <= 16; gx += 8) {
+    cx.beginPath(); cx.moveTo(gx, -22); cx.lineTo(gx, 20); cx.stroke();
+  }
+  for (let gy = -20; gy <= 20; gy += 8) {
+    cx.beginPath(); cx.moveTo(-19, gy); cx.lineTo(19, gy); cx.stroke();
+  }
+  cx.restore();
+
+  // 握り拳(急所) — 刺されると赤くなる
+  if (!blink) {
+    const col = stung ? "#ff8a80" : "#ffffff";
+    cx.fillStyle = col;
+    cx.strokeStyle = "#555";
+    cx.lineWidth = 2;
+    cx.beginPath();
+    cx.ellipse(0, 58, 15, 13, 0, 0, TAU);
+    cx.fill(); cx.stroke();
+    cx.beginPath();
+    cx.moveTo(-5, 47); cx.lineTo(-5, 55);
+    cx.moveTo(1, 46); cx.lineTo(1, 55);
+    cx.moveTo(7, 47); cx.lineTo(7, 56);
+    cx.stroke();
+    // 袖
+    cx.fillStyle = "#3b6ecb";
+    cx.fillRect(-13, 68, 26, 10);
+  }
+  cx.restore();
+}
+
+function drawCursorSimple(x, y) {
+  cx.fillStyle = "#fff";
+  cx.strokeStyle = "#333";
+  cx.lineWidth = 2;
+  cx.beginPath();
+  cx.moveTo(x, y); cx.lineTo(x, y + 17); cx.lineTo(x + 4, y + 13);
+  cx.lineTo(x + 7, y + 19); cx.lineTo(x + 10, y + 17); cx.lineTo(x + 7, y + 12);
+  cx.lineTo(x + 12, y + 12);
+  cx.closePath();
+  cx.fill(); cx.stroke();
+}
+
+function roundRect(x, y, w, h, r) {
+  cx.beginPath();
+  cx.moveTo(x + r, y);
+  cx.arcTo(x + w, y, x + w, y + h, r);
+  cx.arcTo(x + w, y + h, x, y + h, r);
+  cx.arcTo(x, y + h, x, y, r);
+  cx.arcTo(x, y, x + w, y, r);
+  cx.closePath();
+}
+
+function drawHUD() {
+  cx.fillStyle = "#4a3b2a";
+  cx.fillRect(0, 0, W, HUD_H);
+  cx.fillStyle = "#2e2418";
+  cx.fillRect(0, HUD_H - 4, W, 4);
+
+  // 残機(手アイコン)
+  for (let i = 0; i < lives; i++) drawGlove(26 + i * 30, 22, "#fff");
+
+  // カウンター
+  cx.fillStyle = "#1c150d";
+  cx.fillRect(W / 2 - 66, 6, 132, 32);
+  cx.strokeStyle = "#6b5638";
+  cx.lineWidth = 2;
+  cx.strokeRect(W / 2 - 66, 6, 132, 32);
+  cx.font = "bold 26px monospace";
+  cx.textAlign = "center";
+  cx.fillStyle = "#7CFC00";
+  cx.fillText(String(kills).padStart(5, "0"), W / 2, 30);
+
+  // レベル
+  cx.font = "bold 18px monospace";
+  cx.textAlign = "right";
+  cx.fillStyle = "#f0e0c0";
+  cx.fillText("LEVEL " + level, W - 14, 29);
+}
+
+function drawTitle() {
+  cx.fillStyle = "rgba(20,10,30,.72)";
+  cx.fillRect(0, HUD_H, W, H - HUD_H);
+  cx.textAlign = "center";
+  cx.font = "bold 52px sans-serif";
+  cx.fillStyle = "#ffd23c";
+  cx.strokeStyle = "#4a2800";
+  cx.lineWidth = 8;
+  cx.strokeText("ハエたたき", W / 2, 165);
+  cx.fillText("ハエたたき", W / 2, 165);
+  cx.font = "15px sans-serif";
+  cx.fillStyle = "#fff";
+  cx.fillText("マリオペイント「ハエたたき」研究用クローン(ボス無しエンドレス)", W / 2, 202);
+  cx.font = "13px sans-serif";
+  cx.fillStyle = "#ddd";
+  cx.fillText("クリックでハエをたたく ／ ハエに触れてもミスにはならない", W / 2, 248);
+  cx.fillText("小型のハエ: すばやいが無害", W / 2, 274);
+  cx.fillText("黄色のハエ: 止まって子バエの群れを出す(叩けない・逃げるしかない)", W / 2, 296);
+  cx.fillText("爆弾ハエ: ハエたたきを追い回して自爆する", W / 2, 318);
+  cx.fillText("水色のハエ: すばやく、斜め4方向に火花を飛ばす", W / 2, 340);
+  cx.fillText("攻撃(火花・子バエ・爆発)が握り拳に当たるとミス ／ 残機3", W / 2, 366);
+  cx.fillText("点滅する1UPハンドを叩くと残機+1 ／ 20匹ごとにレベルアップ", W / 2, 388);
+  if (frame % 60 < 40) {
+    cx.font = "bold 22px sans-serif";
+    cx.fillStyle = "#7CFC00";
+    cx.fillText("クリックでスタート", W / 2, 435);
+  }
+}
+
+function drawGameOver() {
+  cx.fillStyle = "rgba(20,10,30,.7)";
+  cx.fillRect(0, HUD_H, W, H - HUD_H);
+  cx.textAlign = "center";
+  cx.font = "bold 46px sans-serif";
+  cx.fillStyle = "#ff6a45";
+  cx.strokeStyle = "#3a0e00";
+  cx.lineWidth = 7;
+  cx.strokeText("GAME OVER", W / 2, 210);
+  cx.fillText("GAME OVER", W / 2, 210);
+  cx.font = "bold 26px monospace";
+  cx.fillStyle = "#fff";
+  cx.fillText("たいじ した ハエ: " + kills + " ひき", W / 2, 265);
+  cx.font = "18px monospace";
+  cx.fillText("とうたつ レベル: " + level, W / 2, 298);
+  if (frame % 60 < 40) {
+    cx.font = "bold 20px sans-serif";
+    cx.fillStyle = "#7CFC00";
+    cx.fillText("クリックでタイトルへ", W / 2, 360);
+  }
+}
+
+// =====================================================================
+// サウンド(WebAudio 簡易SFX)
+// =====================================================================
+let actx = null, muted = false;
+function ensureAudio() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { }
+  }
+  if (actx && actx.state === "suspended") actx.resume();
+}
+function env(g, t0, a, d, peak) {
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + a);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d);
+}
+function tone(type, f0, f1, dur, peak, delay) {
+  const t0 = actx.currentTime + (delay || 0);
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t0);
+  o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t0 + dur);
+  env(g, t0, 0.005, dur, peak);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noiseBurst(dur, peak, freq) {
+  const t0 = actx.currentTime;
+  const len = Math.floor(actx.sampleRate * dur);
+  const buf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = actx.createBufferSource();
+  src.buffer = buf;
+  const fl = actx.createBiquadFilter();
+  fl.type = "lowpass"; fl.frequency.value = freq;
+  const g = actx.createGain();
+  g.gain.value = peak;
+  src.connect(fl); fl.connect(g); g.connect(actx.destination);
+  src.start(t0);
+}
+function sfx(name) {
+  if (muted || !actx) return;
+  switch (name) {
+    case "hit": noiseBurst(0.09, 0.5, 1800); tone("square", 240, 60, 0.08, 0.25); break;
+    case "miss": noiseBurst(0.06, 0.18, 3500); break;
+    case "sting": tone("sawtooth", 400, 70, 0.35, 0.3); break;
+    case "shoot": tone("square", 140, 90, 0.12, 0.18); break;
+    case "boom": noiseBurst(0.3, 0.5, 600); tone("sawtooth", 180, 40, 0.3, 0.3); break;
+    case "oneup": tone("square", 523, 523, 0.09, 0.2); tone("square", 659, 659, 0.09, 0.2, 0.09); tone("square", 784, 784, 0.14, 0.2, 0.18); break;
+    case "level": tone("square", 392, 392, 0.1, 0.2); tone("square", 523, 523, 0.16, 0.2, 0.1); break;
+    case "over": tone("sawtooth", 300, 50, 0.8, 0.25); break;
+  }
+}
+document.getElementById("mute").addEventListener("click", e => {
+  muted = !muted;
+  e.target.textContent = muted ? "🔇 音なし" : "🔊 音あり";
+  e.stopPropagation();
+});
+
+// ---- 解説モーダル(開いている間はゲームを一時停止) ----
+const modal = document.getElementById("modal");
+let modalOpen = false;
+function setModal(open) {
+  modalOpen = open;
+  modal.classList.toggle("open", open);
+}
+document.getElementById("info").addEventListener("click", e => {
+  setModal(!modalOpen);
+  e.stopPropagation();
+});
+modal.querySelector(".close").addEventListener("click", () => setModal(false));
+modal.addEventListener("mousedown", e => {
+  if (e.target === modal) setModal(false); // パネル外クリックで閉じる
+  e.stopPropagation();
+});
+
+// =====================================================================
+// メインループ
+// =====================================================================
+function loop() {
+  if (!document.hidden && !modalOpen) {
+    update();
+    draw();
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
